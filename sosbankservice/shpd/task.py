@@ -6,7 +6,7 @@ Created on 2012-08-18
 '''
 import poplib
 import email,os,json
-import setting, helper
+import config, helper
 from models import Log, Customer
 import django.core.exceptions as exceptions
 from datetime import datetime
@@ -131,7 +131,7 @@ class EmailTask(ImportTaskBase):
                 
                 email_digest = connection.uidl()
                 if self._check_email(email_digest):
-                    fp = open(os.path.join(setting.working_dir, filename), 'wb')
+                    fp = open(os.path.join(config.WORKING_DIR, filename), 'wb')
                     fp.write(part.get_payload(decode=1))
                     fp.close()
                     
@@ -167,8 +167,8 @@ class EmailTask(ImportTaskBase):
     def _get_connection(self):
         connection = poplib.POP3('pop3.126.com')
         connection.set_debuglevel(1)
-        connection.user(setting.USERNAME)
-        connection.pass_(setting.PASS)
+        connection.user(config.USERNAME)
+        connection.pass_(config.PASS)
 
 class UplaodFileTask(ImportTaskBase):
     
@@ -258,7 +258,7 @@ class ExportTask(TaskBase):
         details = []
         for c in customers:
             detail = { helper.SHPDDataFile.NAME:c.name,
-                       helper.SHPDDataFile.CUSTOMER_NO:c.custom_no,
+                       helper.SHPDDataFile.CUSTOMER_NO:c.customer_no,
                        helper.SHPDDataFile.BRANCH:c.branch_name,
                        helper.SHPDDataFile.SERV_CNT:str(c.service_count),
                       }

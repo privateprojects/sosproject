@@ -1,0 +1,69 @@
+/**********     common        ********/
+/**********     i18n        ********/
+.i18n_tag {
+
+}
+
+.break_words {
+    word-wrap : break-word;
+    word-break : break-all;
+    white-space : normal;
+}
+
+.common_font {
+    font-size: 16px;
+    font-family: Fixedsys, Monospace, "Courier New", Verdana, Arial;
+    text-align: center;
+    vertical-align: bottom;
+}
+
+.jq_ui_font {
+    font-family: "Lucida Grande", "Lucida Sans",Arial, "sans-serif";
+}
+
+.focus_input_text {
+    border: 2px solid #D9BB73 !important;
+    background: #F8DA4E  !important;
+}
+
+.blink_color {
+    background: #FF726F  !important;
+}
+
+.display_inline_block {
+    *display: inline;
+    *zoom:1;
+    zoom: 1;
+    display: inline-block;
+}
+
+.align_mid_horizon {
+    text-align: center;
+    align:center;
+}
+
+.align_mid_vertical {
+    vertical-align: middle;
+}
+
+.align_bottom_vertical {
+    vertical-align: bottom;
+}
+
+.text_justify_horizon {
+    text-align:justify;
+    text-justify: inter-ideograph ; /* for IE 7 */
+}
+
+.clear_float{
+    clear:both;
+    overflow:hidden;
+    zoom:1;
+}
+.float_left {   float: left;    }
+
+.float_right {   float: right;    }
+
+.padding_6px{ padding: 6px; }
+
+.margin_6px{margin:6px}

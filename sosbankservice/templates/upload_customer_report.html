@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title></title>
+
+<link type="text/css" href="/static/css/jquery-themes/cupertino/jquery-ui-1.8.22.custom.css" rel="stylesheet" />
+<link type="text/css" href="/static/css/common.css" rel="stylesheet" />
+
+<script language="javascript" type="text/javascript" src="/static/js/jquery-1.7.2.js"> </script>
+<script language="javascript" type="text/javascript" src="/static/js/jquery-ui-1.8.22.custom.js"> </script>
+
+<script language="javascript" type="text/javascript">
+
+function init_page() {
+    //$("#tabs").tabs();
+    $("#tabs").accordion();
+}
+
+$(document).ready(function(){
+    init_page();
+});
+</script>
+
+</head>
+
+<body>
+
+
+<div id="tabs">
+    <ul>
+        <li><a href="#unrefresh_form">please select a file to upload</a></li>
+    </ul>
+
+    <div id="unrefresh_form">
+        <form target="upload_response" action="." method="POST"  enctype="multipart/form-data">
+            <table>
+                {{ upload_customer_report_form.as_table }}
+            </table>
+            <p><input type="submit" value="Submit"></p>
+            {% csrf_token %}
+        </form>
+    </div>
+
+    <iframe id='upload_response' name='upload_response' class="jq_ui_font" style="width:100%; height:100px;">
+    </iframe>
+
+</div>
+
+</body>
+
+</html>

@@ -4,7 +4,7 @@ Created on Aug 14, 2012
 
 @author: yan
 '''
-import setting
+import config
 import os, shutil
 from datetime import datetime
 
@@ -68,12 +68,12 @@ class SHPDDataFile(object):
         
         'achive encrypted file'
         filename = os.path.basename(self.file_encrypted)
-        des = os.path.join(setting.achive_dir, filename)
+        des = os.path.join(config.ACHIVE_DIR, filename)
         shutil.move(self.file_encrypted, des)
         
         'achive decrypted file'
         filename = os.path.basename(self.file_decrypted)
-        des = os.path.join(setting.achive_dir, filename)
+        des = os.path.join(config.ACHIVE_DIR, filename)
         shutil.move(self.file_decrypted, des)
         
     def _read_from_file(self):
@@ -170,14 +170,14 @@ class SHPDDataFile(object):
         if encrypt:
             source_file = self.file_decrypted
             target_file = self.file_encrypted
-            secret_key = setting.encrypt_key
+            secret_key = config.ENCRYPT_KEY
         else:
             source_file = self.file_encrypted
             target_file = self.file_decrypted
-            secret_key = setting.decrypt_key
+            secret_key = config.DECRYPT_KEY
         
         args = ' -u ' + secret_key + " " + source_file + " " + target_file
-        cmd = setting.encrypt_cmd_path + " " + args
+        cmd = config.ENCRYPT_CMD_PATH + " " + args
         
         print cmd
         
@@ -189,3 +189,23 @@ class SHPDDataFile(object):
             pass
         
         return True
+
+
+def is_empty_string(target):
+    return target is None or len(unicode(target).strip()) <= 0
+
+def get_field_names(model_class):
+    return [i.attname for i in model_class._meta.fields]
+
+def get_order_by_choices(model_class):
+    return [(i.attname, i.attname) for i in model_class._meta.fields]
+
+def restrict_field_names(model_class, field_name_list):
+    ori_set = set([i.attname for i in model_class._meta.fields])
+    target_set = set(field_name_list)
+    delta_set = target_set - ori_set
+    if (len(delta_set) > 0):
+        bad_names = ",".join(list(delta_set))
+        raise Exception("%s is not in model %s!"%(bad_names, model_class.__name__))
+
+    return field_name_list

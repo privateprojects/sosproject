@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Query Customer Info</title>
+<style type="text/css">
+
+/**********     search_forms_div        ********/
+.search_form_label {
+    /*
+    font-size: 20px;
+    font-family: Fixedsys, Monospace, "Courier New", Verdana, Arial;
+    */
+    text-align:  left;
+    width: 180px;
+}
+
+/**********     search_results_pagination_div        ********/
+#search_results_pagination_div {
+    padding: 0px 0px 3px 3px;
+    text-align:  left;  /*use it to control align page_other + page_current */
+    align: left;
+}
+
+#search_results_pagination_div a.page_other, #search_results_pagination_div a.page_current {
+    margin: 3px;
+    padding: 3px 8px;
+    border: 1px solid grey;
+    border-radius: 5px;
+    text-align:  center;
+}
+#search_results_pagination_div a.page_other:hover {
+    cursor: pointer;
+    background-color:#1B2C3D;
+    color:#C8E60C;
+}
+
+#search_results_pagination_div a.page_other {
+    background-color:#5BA6D8; /*#6CA2F7*/
+    color:#FFFFFF;
+}
+
+#search_results_pagination_div a.page_current {
+    font-weight:bold;    
+    background-color:#1B2C3D;
+    color:#C8E60C;
+}
+
+
+/**********     search_results_table_div        ********/
+
+#search_results_table_div {
+    padding: 2px 2px 6px 2px;
+    overflow: auto;
+}
+
+/**********     customer_table        ********/
+.result_table {
+    /*table-layout:fixed;*/
+    border:0px solid black;
+    border-collapse:collapse;
+    height: 100%;
+    width: 100%;
+}
+
+.result_table_header {
+    color: #FFFFFF;
+    background-color: #5BA6D8;      /*background-color: #8EEE5F;*/ 
+}
+
+.result_table_even_tr:hover, .result_table_odd_tr:hover  {
+    background-color: #F5E988;
+}
+
+.result_table_even_tr {
+    background-color: #CFEAFA;     /*background-color: #BEE3FA;*/
+}
+
+.result_table_odd_tr {
+    background-color: #ADD3EC;
+}
+
+.result_table_th{
+    border:1px solid #FFFFFF;
+    padding: 6px 3px;
+}
+
+.result_table_td{
+    border:1px solid #FFFFFF;
+    padding: 4px 2px;
+}
+
+.result_table_td:hover {
+    /*font-weight: bold;*/
+    color: #F3481A;
+}
+
+
+/**** icon ****/
+
+.icon_minus:hover, .icon_plus:hover, #search_results_download_all img:hover {
+    cursor: pointer;    
+    -moz-box-shadow: 2px 2px 10px #06C ;
+    -webkit-box-shadow: 2px 2px 10px #06C ;
+    box-shadow: 2px 2px 10px #06C ;
+}
+
+.icon_minus:active, .icon_plus:active, #search_results_download_all img:active {
+    cursor: pointer;    
+    -moz-box-shadow: 0px  0px 6px #AAAAAA;
+    -webkit-box-shadow: 0px  0px 6px #AAAAAA;
+    box-shadow: 0px 0px 6px #AAAAAA;
+}
+
+
+/************/
+
+
+
+</style>
+
+
+<link type="text/css" href="/static/css/jquery-themes/cupertino/jquery-ui-1.8.22.custom.css" rel="stylesheet" />
+<link type="text/css" href="/static/css/common.css" rel="stylesheet" />
+<!--
+<link type="text/css" href="/static/css/jquery-themes/trontastic/jquery-ui-1.8.22.custom.css" rel="stylesheet" />
+-->
+
+<script language="javascript" type="text/javascript" src="/static/js/jquery-1.7.2.js"> </script>
+<script language="javascript" type="text/javascript" src="/static/js/jquery-ui-1.8.22.custom.js"> </script>
+<script language="javascript" type="text/javascript" src="/static/js/jquery-plugins/BlockUI/jquery.blockUI.js"> </script>
+
+<script language="javascript" type="text/javascript">
+
+var meta_map = {{ meta_map|safe }} ;
+var ori_url_via_form = "";
+
+$(document).ready(function(){
+    init_form();
+    init_search_results_related(meta_map);
+    init_page();
+});
+
+function init_search_results_related(meta_map) {
+    init_pagination(meta_map);
+    init_table(meta_map);
+    init_search_results_frame(meta_map);
+    init_search_results_download_all();
+}
+
+function init_form() {
+    var input_text = $("#search_form input:text");
+    input_text.addClass("text").addClass("ui-widget-content").addClass("ui-corner-all");
+    input_text.hover( //"ui-state-highlight"
+        function() { $(this).css({background: "#F5F5B5"}); },
+        function() { $(this).css({background: ""});  }
+    );
+
+    input_text.focusin(
+        function() { $(this).addClass("focus_input_text"); }
+    ).focusout( 
+        function() { $(this).removeClass("focus_input_text"); }
+    )
+
+    $( "#id_send_date" ).datepicker({"dateFormat": "yy-mm-dd"});
+    $( "#search_form input:submit" ).click(check_form).button();
+    ori_url_via_form = $("#search_form .search_form_field input").serialize(); // once the form is return from, we will evaluate it.
+}
+
+function init_search_results_download_all () {
+    $("#search_results_download_all a").attr("href", get_url_of_search_results_download_all());
+}
+
+function init_page() {
+
+    $( "#search_form_div" ).accordion({collapsible: true, clearStyle: true});
+
+    $( "#search_results_div" ).accordion(
+        {collapsible: true,
+        /*fillSpace: false,*/
+        clearStyle: true,
+        minHeight: 200
+        }
+    );
+    $( "#search_results_frame_div").css({overflow:"visible"});
+
+}
+////// init form /////////////////////////////////////////////////////////////////
+function check_form( ) {  /// customize
+    var fields_jq = $("#search_form .search_form_field input");
+    var empty_value_fields = [];
+    var i = fields_jq.length-1
+
+    for ( ; i >= 0; i--) {
+        var node_jq = $(fields_jq[i]);
+        var val = $.trim(node_jq.val())
+        if ( !val ) {
+            empty_value_fields.push(node_jq);
+        }
+        node_jq.val(val);
+    }
+
+    if ( empty_value_fields.length >= fields_jq.length ) {
+        //all the fields is empty, that is not allowed
+        for ( i = 0; i < empty_value_fields.length; i++ ) {
+            blink_node(empty_value_fields[i]);
+        }
+        return false;
+    }
+    return true;
+}
+
+////// init results pagination /////////////////////////////////////////////////////////////////
+function init_pagination(meta_map) {
+    $("#search_results_pagination_div").empty();
+
+    if ( !$.isEmptyObject(meta_map) ) {
+        var page_current = meta_map["page_current"] || 1;
+        var page_total = meta_map["page_total"] || 1;
+        var page_size = meta_map["page_size"] || 20;
+        var page_boxes_jq = build_pagination(page_current, page_total, page_size);
+
+        $("#search_results_pagination_div").hide();
+        $("#search_results_pagination_div").append(page_boxes_jq);
+        $("#search_results_pagination_div").show();
+    }   
+
+}
+
+function build_pagination(page_current, page_total, page_size) {
+    var page_display_total = 10, page_display_half = parseInt(page_display_total/2);
+
+    var start_number, end_number;
+    if ( page_total <= page_display_total) {
+        start_number = 1;
+        end_number = page_total;
+    } else {
+        start_number = Math.max(1, page_current-page_display_half+1);
+        end_number = Math.min(page_total, page_current+page_display_half) ;
+    }
+
+    var page_boxes_str = "";
+    if ( start_number > 1) {
+        page_boxes_str += "<span><a class='page_other'>1</a></span>"
+        if (start_number > 2) {
+            page_boxes_str += "<span>...</span>"
+        }
+    }
+    for (var i=start_number; i <= end_number; i++ ) {
+        var boxClassName = (i == page_current) ? "page_current" : "page_other";    
+        page_boxes_str += ("<span><a class='" + boxClassName + "'>" + i + "</a></span>");
+    }
+    if ( end_number < page_total) {
+        if (end_number < page_total-1) {
+            page_boxes_str += "<span>...</span>"
+        }
+        page_boxes_str += "<span><a class='page_other'>" + page_total + "</a></span>"
+    }
+
+    var page_boxes_jq = $(page_boxes_str);
+    page_boxes_jq.filter("span").addClass("display_inline_block");
+    page_boxes_jq.find("a").click(function() {
+        return jump_to_page.call(this);
+    });
+
+    return page_boxes_jq;
+}
+
+
+function jump_to_page( ) {
+    var page_current = $.trim($(this).text());
+    var extra_map = {page_current:parseInt(page_current)}
+
+    window.location = "?" + get_jump_to_page_url(extra_map);
+}
+
+/*
+function jump_to_page( ) {
+    var page_current = $.trim($(this).text());
+    var extra_map = {page_current: parseInt(page_current), return_type:"json" };
+    var params = get_jump_to_page_url(extra_map);
+
+    var request_pack = {
+        params: params
+    }
+
+    var callback_pack = {
+        target: this,
+        func: jump_to_page_callback, 
+        args: [page_current]
+    }
+
+    var banner = "jumping to page:" + page_current;
+
+    send_data_by_ajax( request_pack, callback_pack, banner );
+    return true;
+}
+*/
+
+
+function jump_to_page_callback(args, data) { /// customize
+    var page_current=args[0];
+    updated_customer_info_json = data;
+
+    var old_select = $("#search_results_pagination_div").find(".page_current");
+    old_select.removeClass("page_current").addClass("page_other");;
+    $(this).removeClass("page_other").addClass("page_current");
+
+    init_search_results_related(updated_customer_info_json);
+
+}
+
+
+////// init results table /////////////////////////////////////////////////////////////////
+function init_search_results_frame(meta_map) {
+    var item_total = -1; //-1 means have not do the search yet
+    if (!$.isEmptyObject(meta_map)) {
+        item_total = meta_map["item_total"] || 0;
+    }
+
+    if (parseInt(item_total) >= 0 ) {
+        $("#search_results_div").show();
+    } else {
+        $("#search_results_div").hide();
+    }
+
+    $("#search_results_total_number").text(item_total);
+}
+
+
+
+function all_customer_info_table_decorate_value(value, col_name, col_names_to_col_no, row_values, row_no) { /// customize
+
+    //var url = {{ other_ }};
+    if (col_name == "service_count") {
+        var i = col_names_to_col_no[col_name];
+        var icon_plus  = "<span class='ui-icon ui-icon-plusthick icon_plus'></span>";
+        var icon_minus = "<span class='ui-icon ui-icon-minusthick icon_minus'></span>";
+        var tag_for_value = col_name + "_value_tag";
+        var td_str = "<td>" +
+                "<div class='align_mid_vertical' style='min-width:80px'>" +
+                    "<span class='display_inline_block' >" + icon_minus + "</span>" +
+                    "<span class='display_inline_block " + tag_for_value + "' style='min-width:48px'>" + value + "</span>" + 
+                    "<span class='display_inline_block' >" + icon_plus + "</span>" + 
+                "</div>" +
+                "</td>"
+
+        td_jq = $(td_str);
+
+        var value_jq = td_jq.find("." + tag_for_value);
+        var id = row_values[col_names_to_col_no["id"]];
+
+        td_jq.find(".icon_minus").click( function() {
+            var value = value_jq.text(); //should recount the value from if the value is updated
+            if (parseInt(value) > 0) {
+                update_customer_info(id, -1, value_jq);
+            } else {
+                blink_node(value_jq);
+            }
+            //alert(j + " minus:" + i);
+        });
+
+
+        td_jq.find(".icon_plus").click( function() {
+            update_customer_info(id, +1, value_jq);
+            //alert(j + " plus:" + i);
+        });
+
+        return td_jq;
+
+    }
+    else {
+        return $("<td>" + value + "</td>");
+    }
+}
+
+function update_customer_info(id, service_count_delta, value_jq) {
+    var params_map = {
+        id : id,
+        service_count_delta : service_count_delta,
+        op : "update" //,
+        //csrfmiddlewaretoken: get_csrf_token()
+    }
+    var request_pack = {
+        params: $.param(params_map),
+        type: "POST"        
+    }
+
+    var callback_pack = {
+        target: this,
+        func: update_customer_info_callback, 
+        args: [value_jq]
+    }
+
+    send_data_by_ajax(request_pack, callback_pack, "Updating Service Count ...");
+}
+
+function update_customer_info_callback(args, data) {
+    var value_jq = args[0];
+    var id = data["id"], service_count = data["service_count"];
+    value_jq.text(service_count);
+}
+
+
+function build_table(meta_map, table_id, decorate_display_name, decorate_value) {
+    var item_names = meta_map["item_names"] || [];
+    var item_names_for_display = meta_map["item_names_for_display"] || {};
+    var item_data = meta_map["item_data"] || [];
+    var order_by = meta_map["order_by"];
+
+
+    var tr_jq = $("<tr></tr>"), thead_jq = $("<thead></thead>"), tbody_jq = $("<tbody></tbody>");
+    
+    decorate_display_name = decorate_display_name ||
+    function (display_name, col_name, col_no) {
+        return $("<th>" + display_name + "</th>");
+    }
+
+    decorate_value = decorate_value ||
+    function (value, col_name, col_names_to_col_no, row_values, row_no) {
+        return $("<td>" + value + "</td>");
+    } 
+
+    var col_names_to_col_no = {};
+    var i, j;
+    for ( i = 0; i < item_names.length; i++ ) {
+        var item_name = item_names[i];
+        var display_name = item_names_for_display[item_name];
+        var display_name_jq = decorate_display_name(display_name, item_name, i);
+        tr_jq.append(display_name_jq);
+
+        col_names_to_col_no[item_name] = i;
+    }
+    thead_jq.append(tr_jq);
+
+    for ( j = 0; j < item_data.length; j++ ) {
+        var row = item_data[j];
+        tr_jq = $("<tr></tr>");
+        for (i = 0; i < row.length; i++) {
+            var value = row[i];
+            var value_jq = decorate_value(value, item_names[i], col_names_to_col_no, row, j);
+            tr_jq.append(value_jq);
+        }
+        tbody_jq.append(tr_jq);
+    }
+
+    table_jq = $("<table id='" + table_id + "' rules='all' frame='void'></table>");
+    table_jq.append(thead_jq);
+    table_jq.append(tbody_jq);
+
+    return table_jq;
+}
+
+/*
+function build_table(meta_map, table_id, table_name) {
+    var item_names = meta_map["item_names"] || [];
+    var item_names_for_display = meta_map["item_names_for_display"] || {};
+    var item_data = meta_map["item_data"] || [];
+    var order_by = meta_map["order_by"];
+
+    var i, j;
+    var tr_str = "", thead_str = "", tbody_str = "";
+
+    var display_names_to_col_names = {};
+    for ( i = 0; i < item_names.length; i++ ) {
+        var item_name = item_names[i];
+        var display_name = item_names_for_display[item_name];
+        display_names_to_col_names[display_name] = item_name;
+        display_name = decorate_display_name(display_name, item_name, i);
+ 
+        tr_str += ("<th>" + display_name + "</th>");
+
+
+    }
+    thead_str += ("<tr>" + tr_str + "</tr>");
+
+    for ( i = 0; i < item_data.length; i++ ) {
+        var row = item_data[i];
+        tr_str = "";
+        for (j = 0; j < row.length; j++) {
+            var value = row[j];
+            tr_str += ("<td>" + value + "</td>");
+        }
+        tbody_str += ("<tr>" + tr_str + "</tr>");
+    }
+
+    table_str = "<table id='" + table_id + "' name='" + table_name + "' rules='all' frame='void'>" +
+                    "<tbody>" + thead_str + "</tbody>" +
+                    "<tbody>" + tbody_str + "</tbody>" +
+                "</table>";
+    var table_jq = $(table_str);
+    return table_jq;
+}
+*/
+
+function color_table(table_jq) {
+    table_jq.addClass("result_table").addClass("common_font").addClass("break_words");
+    var header_col = table_jq.find("tr:first");
+    header_col.addClass("result_table_header").addClass("jq_ui_font");
+    header_col.find("th").addClass("result_table_th");
+
+    table_jq.find("tr:even:not(:first)").addClass("result_table_even_tr");
+    table_jq.find("tr:odd").addClass("result_table_odd_tr");
+    table_jq.find("td").addClass("result_table_td");
+    
+    return table_jq;
+}
+
+function init_table(meta_map) {
+    $( "#search_results_table_div").empty();
+    if (!$.isEmptyObject(meta_map)) {
+        var table_jq = build_table(meta_map, "id_all_customer_info_table", null, all_customer_info_table_decorate_value);
+        /// customize
+        table_jq = color_table(table_jq);
+
+        $("#search_results_table_div").hide();
+        $("#search_results_table_div").append(table_jq);
+        $("#search_results_table_div").show();
+    }
+}
+
+
+
+////// common functions /////////////////////////////////////////////////////////////////
+function get_jump_to_page_url(extra_map) {
+    extra_params = $.param(extra_map, true);
+    return  ori_url_via_form + "&" + extra_params;
+}
+
+function send_data_by_ajax(request_pack, callback_pack, busy_banner, delay_callback_in_ms) {
+    request_pack = request_pack || {};
+    callback_pack = callback_pack || {};
+    busy_banner = busy_banner || "Just a moment...";
+    delay_callback_in_ms = delay_callback_in_ms || 1000;
+
+    var url = request_pack.url || ".";
+    var params = request_pack.params || null;
+    var type =  request_pack.type || "GET";
+
+    $.ajax({
+        url: url,
+        dataType: 'json',
+        data: params,
+        beforeSend: set_csrf_header,
+        success: function (data, textStatus, jqXHR) {
+            var target = callback_pack.target;
+            var func = callback_pack.func;
+            var args = callback_pack.args;
+            setTimeout(function() {
+                      hide_veil();
+                      func.call(target, args, data, textStatus, jqXHR);
+                  },
+                  delay_callback_in_ms
+            );
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+            hide_veil();
+            //todo: handle error
+            alert("error!");
+        },
+        type: type
+
+    });
+
+    show_veil(busy_banner);
+}
+
+function get_cookie(name) {
+    var cookie_value = null;
+    if (document.cookie && document.cookie != '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                cookie_value = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookie_value;
+}
+
+function set_cookie(name, value) {
+    document.cookie = document.cookie || '';
+    name = encodeURIComponent(name);
+    value = encodeURIComponent(value);
+    document.cookie += (";" + name + "=" + value);
+
+}
+
+function same_origin(url) {
+    // url could be relative or scheme relative or absolute
+    var host = document.location.host; // host + port
+    var protocol = document.location.protocol;
+    var sr_origin = '//' + host;
+    var origin = protocol + sr_origin;
+    // Allow absolute or scheme relative URLs to same origin
+    return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
+            (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
+        // or any other URL that isn't scheme relative or absolute i.e relative.
+            !(/^(\/\/|http:|https:).*/.test(url));
+}
+function safe_method(method) {
+    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+}
+
+function set_csrf_header(xhr, settings) {
+
+
+    if (!safe_method(settings.type)) {
+        var csrftoken = get_cookie('csrftoken');
+        if (!$.trim(csrftoken)) {
+            csrftoken = get_csrf_token();
+            set_cookie('csrftoken', csrftoken);
+        }
+        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+    }
+
+
+}
+
+function show_veil(msg) {
+    var img_src = "/static/img/green_loading1.gif";
+    $.blockUI({ 
+        css: { 
+            'border': 'none', 
+            'padding': '15px', 
+            'backgroundColor': '#fff', 
+            '-webkit-border-radius': '10px', 
+            '-moz-border-radius': '10px', 
+            'border-radius' : '10px',
+            'opacity': 0.6, 
+            'color': '#000' 
+           },
+    
+        message: '<h1><img src=' + img_src + '/><span class="i18n padding_6px">' + msg + '</span></h1>' 
+    }); 
+}
+
+function hide_veil() {
+    $.unblockUI();
+}
+
+function blink_node( node_jq, count, interval ) {
+    if (!node_jq) return;
+    count = count || 2;
+    interval = Math.max(300, interval || 0);
+
+    var delta =  parseInt(interval*2/count);
+    var ori_bg_color = node_jq.addClass("blink_color");
+
+    for (var i=count; i > 1; i-- ) {
+        node_jq = node_jq.fadeOut(interval).fadeIn(interval);
+        interval -= delta;
+    }
+    node_jq = node_jq.fadeOut(interval, function(){
+        var ori_bg_color = node_jq.removeClass("blink_color");
+        node_jq.fadeIn(interval);
+    });
+}
+
+function get_csrf_token() {
+    if(!arguments.callee.token) {
+        arguments.callee.token = $("input[name='csrfmiddlewaretoken']").val();
+    }
+
+    return  arguments.callee.token;
+}
+
+function get_url_of_search_results_download_all() {
+    if(!arguments.callee.url) {
+        var extra_map = {
+            response_type : "file",
+            page_size : -1 //means all
+        };
+        arguments.callee.url = "./?" + ori_url_via_form + "&" + $.param(extra_map);
+    }
+
+    return  arguments.callee.url;
+}
+
+</script>
+
+</head>
+
+<body>
+{% load custom_tags %}
+
+<div id="search_form_div"> <!-- customize -->
+    <h3><a href="#" class="i18n_tag">Search Condition:</a></h3>
+    <div>
+        <form id="search_form" action="." method="GET">
+        <fieldset class="padding_6px">
+            <div class="padding_6px search_form_field">
+            <span class="search_form_label display_inline_block">
+            <lable for="id_name" class="ui-widget i18n"> {{"customer_info.name"|localize}} </lable>
+            </span>
+            {{ customer_query_form.name }}
+            </div>
+
+            <div class="padding_6px search_form_field">
+            <span class="search_form_label display_inline_block">
+            <lable for="id_customer_no"  class="ui-widget i18n"> {{"customer_info.customer_no"|localize}} </lable>
+            </span>
+            {{ customer_query_form.customer_no }}
+            </div>
+
+            <div class="padding_6px search_form_field">
+            <span class="search_form_label display_inline_block">
+            <lable for="id_branch_name"  class="ui-widget  i18n"> {{"customer_info.branch_name"|localize}} </lable>
+            </span>
+            {{ customer_query_form.branch_name }}
+            </div>
+
+            <p><input type="submit" value="Submit"></p>
+            {% csrf_token %}
+
+        </fieldset>
+        </form>
+    </div>
+    
+
+</div>
+
+<div id="search_results_div">
+
+    <h3><span class="display_inline_block"><a href="#" class="i18n_tag">Search Results:</a></span> 
+        <span class="display_inline_block" id="search_results_total_number"></span>
+    </h3>
+    <div id="search_results_frame_div">
+        <div >
+            <div id="search_results_table_div">
+            </div>
+        </div>
+        <div class="text_justify_horizon" style="padding:0px 10px;">
+            <span class="display_inline_block">
+                <span class="display_inline_block jq_ui_font  " style="color:#1B2C3D;" >
+                    <span class="display_inline_block i18n_tag "> Page: 
+                    </span>
+                </span>
+                <span class="display_inline_block common_font " >
+                    <span id="search_results_pagination_div">           
+                    </span>
+                </span>
+            </span>
+
+            <span class="display_inline_block">
+                <span class="display_inline_block jq_ui_font " style="color:#1B2C3D;" >
+                    <span class="display_inline_block i18n_tag"> Download All Results:
+                    </span>
+                </span>
+                <span class="display_inline_block">
+                    <span id="search_results_download_all">  
+                        <a target='search_results_download_all_iframe' >
+                            <img class="display_inline_block" src="/static/img/excel2.png" style="margin-bottom:-6px; border: 0px;"/>
+                        </a>
+                        <iframe  name="search_results_download_all_iframe" style="display: none; ">
+                            <!-- as a result forwarder for clicking #search_results_download_all -->
+                        </iframe>
+                    </span>
+                </span>
+            </span>
+            <span class="display_inline_block" style="width:100%; height:0px;  line-height:0px; overflow:hidden; border: 0px;">
+            <!-- in order to make those span above justifies in horizon, we use this trick let it occupy one line -->
+            </span>
+        </div>
+    </div>
+</div>
+</body>
+</html>

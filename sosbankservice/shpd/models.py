@@ -6,8 +6,9 @@ from django.db import models
 class Customer(models.Model):
     
     # 姓名|客户号|分行名称|卡号|充值点数|手机号
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=120)
-    custom_no = models.CharField(max_length=60)
+    customer_no = models.CharField(max_length=60)
     branch_name = models.CharField(max_length=120)
     card_no = models.CharField(max_length=100)
     mobile = models.CharField(max_length=20)
