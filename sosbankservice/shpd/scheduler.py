@@ -4,10 +4,17 @@ Created on Aug 14, 2012
 @author: yan
 '''
 
-import apscheduler
+import apscheduler.scheduler as scheduler
 import task
 from datetime import datetime, timedelta
 import time
+
+sched = scheduler.Scheduler()
+emailtask = task.EmailTask()
+
+sched.add_cron_job(emailtask, year=2012, month=8, day=26, hour=21, minute=56)
+
+sched.start()
 
 
 
@@ -54,6 +61,7 @@ class Event(object):
             
 
 class CronTab(object):
+    
     def __init__(self, *events):
         self.events = events
 

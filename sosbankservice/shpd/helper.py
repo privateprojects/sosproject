@@ -7,7 +7,7 @@ Created on Aug 14, 2012
 import config
 import os, shutil
 from datetime import datetime
-
+    
 class SHPDDataFile(object):
     
     '报文编号'
@@ -50,7 +50,7 @@ class SHPDDataFile(object):
                 self._read_from_file()
                 
             else:
-                'send alerting email'
+                'send alerting email'  #TODO
             
         elif self.file_type == SHPDDataFile.TYPE_REPLY:
             
@@ -190,6 +190,7 @@ class SHPDDataFile(object):
         
         return True
 
+<<<<<<< HEAD
 
 def is_empty_string(target):
     return target is None or len(unicode(target).strip()) <= 0
@@ -209,3 +210,5 @@ def restrict_field_names(model_class, field_name_list):
         raise Exception("%s is not in model %s!"%(bad_names, model_class.__name__))
 
     return field_name_list
+=======
+>>>>>>> 7ead93129603843df95154b418fc0c00979c634b
