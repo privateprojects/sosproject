@@ -10,6 +10,9 @@ class customers(models.Model):
     branch_name = models.CharField(max_length=120)
     mobile = models.CharField(max_length=20)
     service_count = models.IntegerField() 
+    comments=models.TextField()
+    modified = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(auto_now_add=True)
 
 class log(models.Model):
     
@@ -21,8 +24,8 @@ class log(models.Model):
     )
     
     identitiy = models.CharField(max_length=120)
-    info = models.TextField()
     type = models.SmallIntegerField(choices=TYPE_CHOICES)
-    op_date = models.DateField()
+    info = models.TextField()
+    op_date = models.DateTimeField(auto_now_add=True)
     op_id = models.IntegerField()
          
