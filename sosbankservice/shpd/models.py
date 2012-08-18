@@ -1,8 +1,9 @@
+# -*- coding: utf-8 -*-
 from django.db import models
 
 # Create your models here.
 
-class customers(models.Model):
+class Customer(models.Model):
     
     # 姓名|客户号|分行名称|卡号|充值点数|手机号
     name = models.CharField(max_length=120)
@@ -14,7 +15,7 @@ class customers(models.Model):
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
 
-class log(models.Model):
+class Log(models.Model):
     
     TYPE_CHOICES = (
         (1, 'Import data from email.'),
@@ -26,6 +27,7 @@ class log(models.Model):
     identitiy = models.CharField(max_length=120)
     type = models.SmallIntegerField(choices=TYPE_CHOICES)
     info = models.TextField()
+    status = models.SmallIntegerField()
     op_date = models.DateTimeField(auto_now_add=True)
     op_id = models.IntegerField()
          
