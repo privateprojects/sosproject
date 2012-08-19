@@ -5,7 +5,8 @@ Created on Aug 14, 2012
 @author: yan
 '''
 import setting
-import os
+import os, shutil
+from datetime import datetime
 
 class SHPDDataFile(object):
     
@@ -26,6 +27,7 @@ class SHPDDataFile(object):
     BRANCH = 'branchName'
     CARD_NO = 'cardNo'
     MOBILE = 'mobile'
+    SERV_CNT = 'serviceCount'
     
     def __init__(self, 
                  file_encrypted, 
@@ -57,12 +59,22 @@ class SHPDDataFile(object):
                 'write to file'
                 self._write_to_file()
                 
-                'send email'
+                'encrypt'
+                self.encrypt(encrypt=True)
                 
-        self._archive()
+        return True
         
-    def _archive(self):
-        pass 
+    def archive(self):
+        
+        'achive encrypted file'
+        filename = os.path.basename(self.file_encrypted)
+        des = os.path.join(setting.achive_dir, filename)
+        shutil.move(self.file_encrypted, des)
+        
+        'achive decrypted file'
+        filename = os.path.basename(self.file_decrypted)
+        des = os.path.join(setting.achive_dir, filename)
+        shutil.move(self.file_decrypted, des)
         
     def _read_from_file(self):
         
@@ -80,30 +92,76 @@ class SHPDDataFile(object):
             
             self.file_type = filetype
             
-            details = {}
+            details = []
+            detail = {}
             for ln in detailLines:
                 
                 values = ln.split('|')
                 
                 if filetype == self.TYPE_RECEIVE:
-                    details[SHPDDataFile.NAME] = values[0].strip()
-                    details[SHPDDataFile.CUSTOMER_NO] = values[1].strip()
-                    details[SHPDDataFile.BRANCH] = values[2].strip()
-                    details[SHPDDataFile.CARD_NO] = values[3].strip()
-                    details[SHPDDataFile.MOBILE] = values[4].strip()
+                    detail[SHPDDataFile.NAME] = values[0].strip()
+                    detail[SHPDDataFile.CUSTOMER_NO] = values[1].strip()
+                    detail[SHPDDataFile.BRANCH] = values[2].strip()
+                    detail[SHPDDataFile.CARD_NO] = values[3].strip()
+                    detail[SHPDDataFile.MOBILE] = values[5].strip()
                 elif filetype == self.TYPE_UPDATE:
-                    details[SHPDDataFile.NAME] = values[0].strip()
-                    details[SHPDDataFile.CUSTOMER_NO] = values[1].strip()
-                    details[SHPDDataFile.BRANCH] = values[2].strip()
-                    details[SHPDDataFile.CARD_NO] = values[3].strip() 
+                    detail[SHPDDataFile.NAME] = values[0].strip()
+                    detail[SHPDDataFile.CUSTOMER_NO] = values[1].strip()
+                    detail[SHPDDataFile.BRANCH] = values[2].strip()
+                    detail[SHPDDataFile.CARD_NO] = values[3].strip() 
                 else:
                     pass
+                
+                details.append(detail)
             
             self.dataset = {'header':header, 'details':details}
     
     def _write_to_file(self):
-        pass
+        
+        SOS_PARTNER_CODE = '03'
+        
+        with open(self.file_decrypted, 'w') as f:
             
+            header = {}
+            details = self.dataset.get('details')
+            
+            headerlines = []
+            detaillines = []
+            
+            count = len(details)
+            rpt_date = datetime.now().strftime('%Y%m%d')
+            
+            headerlines.append(':'.join(self.TYPE,self.TYPE_REPLY))
+            headerlines.append(':'.join(self.PARTNER, SOS_PARTNER_CODE) )
+            headerlines.append(':'.join(self.COUNT, count))
+            headerlines.append(':'.join(self.RPT_DATE, rpt_date))
+            
+            header[self.TYPE]=self.TYPE_REPLY
+            header[self.PARTNER]= SOS_PARTNER_CODE
+            header[self.COUNT]= count
+            header[self.RPT_DATE]= rpt_date
+            
+            for detail in details:
+                
+                name = detail.get(SHPDDataFile.NAME)
+                customer = detail.get(SHPDDataFile.CUSTOMER_NO)
+                branch = detail.get(SHPDDataFile.BRANCH)
+                cardno = detail.get(SHPDDataFile.CARD_NO)
+                servCount = detail.get(SHPDDataFile.SERV_CNT)
+                point1 = '0'
+                point2 = '0'
+                point3 = '0'
+                line = '|'.join(name,customer,branch,cardno,servCount,point1,point2,point3)
+                                
+                detaillines.append(line)
+            
+            'write header'
+            f.write('\n'.join(headerlines))
+            f.write('====================================\n')
+            f.write('\n'.join(detaillines))
+        
+        self.dateset['header'] = header
+        
     def encrypt(self, encrypt=True):
         
         '''

@@ -16,11 +16,11 @@ class TaskBase(object):
     '''
     task base for importing and exporting data
     '''
-    def __class__(self, *args, **kw):
+    def __class__(self):
         
-        self.do(*args, **kw)
+        self.do()
         
-    def do(self, *args, **kw):
+    def do(self):
         pass
     
 
@@ -33,23 +33,25 @@ class ImportTaskBase(TaskBase):
     def save2db(self, details):
         
         for p in details:
-            result = Customer.objects.filter(name__exact = p.get('name'), custom_no__exact= p.get('customerNo'), branch_name__exact = p.get('branchName'))
+            result = Customer.objects.filter(name__exact = p.get(helper.SHPDDataFile.NAME), 
+                                             custom_no__exact= p.get(helper.SHPDDataFile.CUSTOMER_NO), 
+                                             branch_name__exact = p.get(helper.SHPDDataFile.BRANCH))
             if len(result) == 1:
                 'update'
                 customer = result[0]
-                customer.custom_no = p.get('cardNo')
+                customer.card_no = p.get(helper.SHPDDataFile.CARD_NO)
             else:
                 'insert'
-                customer = Customer(name=p.get('name'), 
-                                    custom_no = p.get('customerNo'), 
-                                    branch_name = p.get('branchName'), 
-                                    card_no = p.get('cardNo'), 
-                                    mobile=p.get('mobile'))
+                customer = Customer(name=p.get(helper.SHPDDataFile.NAME), 
+                                    custom_no = p.get(helper.SHPDDataFile.CUSTOMER_NO), 
+                                    branch_name = p.get(helper.SHPDDataFile.BRANCH), 
+                                    card_no = p.get(helper.SHPDDataFile.CARD_NO), 
+                                    mobile=p.get(helper.SHPDDataFile.MOBILE))
             customer.save()
     
 class EmailTask(ImportTaskBase):
     
-    FILE_SOURCE = '0'
+    FILE_SOURCE = '0'  # from email attachement
     
     STATUS_DOWNLOADED = 1
     STATUS_DATA_LOADED = 2
@@ -57,7 +59,7 @@ class EmailTask(ImportTaskBase):
     def __init__(self):
         ImportTaskBase.__init__() 
     
-    def do(self, *args, **kw):
+    def do(self):
         
         multiple_data = self.import_from_emial()
         self.read_to_db(multiple_data)
@@ -80,6 +82,9 @@ class EmailTask(ImportTaskBase):
             log.info = json.dumps(info_dict)
             log.status = EmailTask.STATUS_DATA_LOADED
             log.save()
+            
+            'archive file'
+            datafile.archive()
     
     def import_from_emial(self):
         
@@ -121,7 +126,7 @@ class EmailTask(ImportTaskBase):
                 if not(filename): continue
                 
                 'add suffix to filename'
-                suffix = datetime.now().strftime('_%y%m%H%M%S_') + "_" + str(file_idx)  + "_" + EmailTask.FILE_SOURCE
+                suffix = datetime.now().strftime('_%y%m%d%H%M%S_') + "_" + str(file_idx)  + "_" + EmailTask.FILE_SOURCE
                 filename = filename + suffix
                 
                 email_digest = connection.uidl()
@@ -160,19 +165,59 @@ class EmailTask(ImportTaskBase):
             return self._get_connection()
         
     def _get_connection(self):
-        
         connection = poplib.POP3('pop3.126.com')
         connection.set_debuglevel(1)
         connection.user(setting.USERNAME)
         connection.pass_(setting.PASS)
 
 class UplaodFileTask(ImportTaskBase):
-    def __init__(self):
-        ImportTaskBase.__init__() 
+    
+    FILE_SOURCE = '1'  # from uploaded files
+    
+    STATUS_DATA_LOADED = 1
+    
+    def __init__(self, encryptedFile, operator_id):
         
+        ImportTaskBase.__init__() 
+        self.encryptedFile = encryptedFile
+        self.operator_id = operator_id
+    
+    @classmethod
+    def get_encrypte_filename(cls, filename):
+        return filename+datetime.now().strftime('_%y%m%H%M%S_') + "_" + UplaodFileTask.FILE_SOURCE
+    
+    def do(self):
+        
+        decryptedFile = self.encryptedFile + "_decrypted"
+        datafile = helper.SHPDDataFile(self.encryptedFile, decryptedFile, helper.SHPDDataFile.TYPE_RECEIVE)
+        dataset = datafile.process()
+        
+        'save details'
+        self.save2db(dataset.get('details'))
+        
+        'save log'    
+        info_dict={} 
+        info_dict.update(dataset.get('header')); 
+        info_dict.update({'decryptedfile':decryptedFile, 'encryptedfile':self.encryptedFile})
+        log = Log()
+        log.info = json.dumps(info_dict)
+        log.identitiy = self.encryptedFile
+        log.status = UplaodFileTask.STATUS_DATA_LOADED
+        log.op_id = self.operator_id
+        log.save()
+        
+        'archive file'
+        datafile.archive()
 
 class ExportTask(TaskBase):
-    pass
     
-            
+    def __init__(self, encryptedFile, operator_id=0):
+        
+        ImportTaskBase.__init__() 
+        self.encryptedFile = encryptedFile
+        self.operator_id = operator_id
+    
+    def do(self):
+        pass
+              
     
