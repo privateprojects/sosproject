@@ -211,13 +211,60 @@ class UplaodFileTask(ImportTaskBase):
 
 class ExportTask(TaskBase):
     
-    def __init__(self, encryptedFile, operator_id=0):
+    FILE_SOURCE = '2'
+    
+    STATUS_FILE_ENCRYPTED = 1
+    STATUS_SEND_EMAIL = 2
+    
+    def __init__(self, customers=None, operator_id=0):
         
         ImportTaskBase.__init__() 
-        self.encryptedFile = encryptedFile
         self.operator_id = operator_id
+        self.customers = customers
     
     def do(self):
-        pass
+        
+        decryptedFile = "sy03_"+datetime.now().strftime('_%y%m%H%M%S_') + UplaodFileTask.FILE_SOURCE +  '_decrpyted'
+        encryptedFile = 'sy03_'+datetime.now().strftime('_%y%m%d')
+        
+        dataset = self._get_data()
+        datafile = helper.SHPDDataFile(encryptedFile, decryptedFile, dataset=dataset, file_type=helper.SHPDDataFile.TYPE_UPDATE)
+        
+        dataset = datafile.process()
+        
+        'send email'
+        
+        
+        'save log'    
+        info_dict={} 
+        info_dict.update(dataset.get('header')); 
+        info_dict.update({'decryptedfile':decryptedFile, 'encryptedfile':self.encryptedFile})
+        log = Log()
+        log.info = json.dumps(info_dict)
+        log.identitiy = decryptedFile
+        log.status = ExportTask.STATUS_DATA_LOADED
+        log.op_id = self.operator_id
+        log.save()
+        
+        'archive file'
+        datafile.archive()
               
-    
+    def _get_data(self):
+        
+        if not self.customers:
+            customers = Customer.objects.all()
+        else:
+            customers = self.customers
+        details = []
+        for c in customers:
+            detail = { helper.SHPDDataFile.NAME:c.name,
+                       helper.SHPDDataFile.CUSTOMER_NO:c.custom_no,
+                       helper.SHPDDataFile.BRANCH:c.branch_name,
+                       helper.SHPDDataFile.SERV_CNT:str(c.service_count),
+                      }
+            
+            details.append(detail)
+            
+        dataset = dict(details=details)
+        return dataset
+        
