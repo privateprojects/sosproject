@@ -62,7 +62,7 @@ class SHPDDataFile(object):
                 'encrypt'
                 self.encrypt(encrypt=True)
                 
-        return True
+        return self.dataset
         
     def archive(self):
         
