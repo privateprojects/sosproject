@@ -9,6 +9,7 @@ class Customer(models.Model):
     name = models.CharField(max_length=120)
     custom_no = models.CharField(max_length=60)
     branch_name = models.CharField(max_length=120)
+    card_no = models.CharField(max_length=100)
     mobile = models.CharField(max_length=20)
     service_count = models.IntegerField() 
     comments=models.TextField()

@@ -4,8 +4,13 @@ Created on Aug 14, 2012
 @author: yan
 '''
 
+import apscheduler
+import task
 from datetime import datetime, timedelta
 import time
+
+
+
 
 # Some utility classes / functions first
 class AllMatch(set):
@@ -62,10 +67,10 @@ class CronTab(object):
             while datetime.now() < t:
                 time.sleep((t - datetime.now()).seconds)
                 
-c = CronTab(
-  Event(perform_backup, 0, 2, dow=6 ),
-  Event(purge_temps, 0, range(9,18,2), dow=range(0,5))
-)                            
+#c = CronTab(
+#  Event(perform_backup, 0, 2, dow=6 ),
+#  Event(purge_temps, 0, range(9,18,2), dow=range(0,5))
+#)                            
 
 if __name__ == '__main__':
     pass

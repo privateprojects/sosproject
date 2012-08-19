@@ -1,53 +1,15 @@
+# -*- coding: utf-8 -*-
 '''
 Created on 2012-08-18
 
 @author: Alan Yan
 '''
-import getpass, poplib
+import poplib
 import email,os,json
-import setting
-import apscheduler
+import setting, helper
 from models import Log, Customer
 import django.core.exceptions as exceptions
-import datetime.datetime as datetime
-
-datetime.strftime()
-
-class SHPDDateFile(object):
-    
-    Data2File = 'Data2File'
-    File2Data = 'File2Data' 
-    
-    def __init__(self, file_encrypted, file_decrypted, dataset = None, process_type=SHPDDateFile.File2Data):
-        
-        self.file_encrypted = file_encrypted 
-        self.file_decrypted = file_decrypted
-        self.dataset = dataset
-        self.process_type = process_type
-        
-    def process(self):
-        
-        if self.process_type == SHPDDateFile.Data2File:
-            
-            if self.dataset:
-                'write to file'
-            
-        elif self.process_type == SHPDDateFile.File2Data:
-            
-            self.decrypt(self.file_encrypted)    
-            'read file'
-            
-            
-    def encrypt(self, encrypt=True):
-        
-        cmd = ''
-        x=os.popen(cmd)
-        
-        for i in x.readlines():
-            pass
-    
-       
-     
+from datetime import datetime
 
 class TaskBase(object):
            
@@ -61,12 +23,31 @@ class TaskBase(object):
     def do(self, *args, **kw):
         pass
     
+
+class ImportTaskBase(TaskBase):
+    
+    def __init__(self):
+        
+        TaskBase.__init__() 
+    
     def save2db(self, details):
         
         for p in details:
-            pass
+            result = Customer.objects.filter(name__exact = p.get('name'), custom_no__exact= p.get('customerNo'), branch_name__exact = p.get('branchName'))
+            if len(result) == 1:
+                'update'
+                customer = result[0]
+                customer.custom_no = p.get('cardNo')
+            else:
+                'insert'
+                customer = Customer(name=p.get('name'), 
+                                    custom_no = p.get('customerNo'), 
+                                    branch_name = p.get('branchName'), 
+                                    card_no = p.get('cardNo'), 
+                                    mobile=p.get('mobile'))
+            customer.save()
     
-class EmailTask(TaskBase):
+class EmailTask(ImportTaskBase):
     
     FILE_SOURCE = '0'
     
@@ -74,7 +55,7 @@ class EmailTask(TaskBase):
     STATUS_DATA_LOADED = 2
     
     def __init__(self):
-        TaskBase.__init__() 
+        ImportTaskBase.__init__() 
     
     def do(self, *args, **kw):
         
@@ -87,15 +68,15 @@ class EmailTask(TaskBase):
             
             'read data from file'
             decryptedFile = encryptedFile + '_decrypted'
-            datafile = SHPDDateFile(encryptedFile, decryptedFile, SHPDDateFile.File2Data)
+            datafile = helper.SHPDDataFile(encryptedFile, decryptedFile, helper.SHPDDataFile.TYPE_RECEIVE)
             dataset = datafile.process()
             
             'save details'
-            self.save2db(dataset.details)
+            self.save2db(dataset.get('details'))
             
             'save log'
             info_dict=json.loads(log.loginfo); 
-            info_dict.update(dataset.header); info_dict.update(decryptedfile=decryptedFile)
+            info_dict.update(dataset.get('header')); info_dict.update(decryptedfile=decryptedFile)
             log.info = json.dumps(info_dict)
             log.status = EmailTask.STATUS_DATA_LOADED
             log.save()
@@ -184,14 +165,14 @@ class EmailTask(TaskBase):
         connection.set_debuglevel(1)
         connection.user(setting.USERNAME)
         connection.pass_(setting.PASS)
+
+class UplaodFileTask(ImportTaskBase):
+    def __init__(self):
+        ImportTaskBase.__init__() 
         
 
-class AutoExportTask(TaskBase):
+class ExportTask(TaskBase):
     pass
     
-class UplaodFileTask(TaskBase):
-    pass
             
-class ManualExportTask(TaskBase):
-    pass
     
