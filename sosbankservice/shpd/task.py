@@ -23,6 +23,21 @@ class TaskBase(object):
     def do(self):
         pass
     
+    @classmethod    
+    def format_filename(cls, filename, idx=0):
+        return filename+datetime.now().strftime('_%y%m%H%M%S_') + '_'  + str(idx) + '_' + cls.FILE_SOURCE
+    
+    @classmethod
+    def format_filename_processed(cls, filename):
+        return filename + '_processed'
+    
+    @classmethod    
+    def deformat_filename(cls, filename):
+        parts = filename.split('_')
+        if parts[-1] == '_processed':
+            return '_'.join(parts[0,-4])
+        else: 
+            return '_'.join(parts[0,-3])
 
 class ImportTaskBase(TaskBase):
     
@@ -49,6 +64,7 @@ class ImportTaskBase(TaskBase):
                                     mobile=p.get(helper.SHPDDataFile.MOBILE))
             customer.save()
     
+        
 class EmailTask(ImportTaskBase):
     
     FILE_SOURCE = '0'  # from email attachement
@@ -69,7 +85,7 @@ class EmailTask(ImportTaskBase):
         for log, encryptedFile in multiple_data:
             
             'read data from file'
-            decryptedFile = encryptedFile + '_decrypted'
+            decryptedFile = EmailTask.format_filename_processed(encryptedFile)
             datafile = helper.SHPDDataFile(encryptedFile, decryptedFile, helper.SHPDDataFile.TYPE_RECEIVE)
             dataset = datafile.process()
             
@@ -126,8 +142,7 @@ class EmailTask(ImportTaskBase):
                 if not(filename): continue
                 
                 'add suffix to filename'
-                suffix = datetime.now().strftime('_%y%m%d%H%M%S_') + "_" + str(file_idx)  + "_" + EmailTask.FILE_SOURCE
-                filename = filename + suffix
+                filename = EmailTask.format_filename(filename, encrypted=True, idx=file_idx)
                 
                 email_digest = connection.uidl()
                 if self._check_email(email_digest):
@@ -176,19 +191,16 @@ class UplaodFileTask(ImportTaskBase):
     
     STATUS_DATA_LOADED = 1
     
-    def __init__(self, encryptedFile, operator_id):
+    def __init__(self, uploadfilename, operator_id):
         
         ImportTaskBase.__init__() 
-        self.encryptedFile = encryptedFile
+        self.uploadfilename = uploadfilename
         self.operator_id = operator_id
-    
-    @classmethod
-    def get_encrypte_filename(cls, filename):
-        return filename+datetime.now().strftime('_%y%m%H%M%S_') + "_" + UplaodFileTask.FILE_SOURCE
     
     def do(self):
         
-        decryptedFile = self.encryptedFile + "_decrypted"
+        encryptedFile = UplaodFileTask.format_filename(self.uploadfilename)
+        decryptedFile = UplaodFileTask.format_filename_processed(encryptedFile) 
         datafile = helper.SHPDDataFile(self.encryptedFile, decryptedFile, helper.SHPDDataFile.TYPE_RECEIVE)
         dataset = datafile.process()
         
@@ -224,8 +236,8 @@ class ExportTask(TaskBase):
     
     def do(self):
         
-        decryptedFile = "sy03_"+datetime.now().strftime('_%y%m%H%M%S_') + UplaodFileTask.FILE_SOURCE +  '_decrpyted'
-        encryptedFile = 'sy03_'+datetime.now().strftime('_%y%m%d')
+        decryptedFile = ExportTask.format_filename()
+        encryptedFile = ExportTask.format_filename_processed(decryptedFile)
         
         dataset = self._get_data()
         datafile = helper.SHPDDataFile(encryptedFile, decryptedFile, dataset=dataset, file_type=helper.SHPDDataFile.TYPE_UPDATE)
@@ -233,7 +245,8 @@ class ExportTask(TaskBase):
         dataset = datafile.process()
         
         'send email'
-        
+        from django.core.mail import send_mail
+                
         
         'save log'    
         info_dict={} 
@@ -241,7 +254,7 @@ class ExportTask(TaskBase):
         info_dict.update({'decryptedfile':decryptedFile, 'encryptedfile':self.encryptedFile})
         log = Log()
         log.info = json.dumps(info_dict)
-        log.identitiy = decryptedFile
+        log.identitiy = encryptedFile
         log.status = ExportTask.STATUS_DATA_LOADED
         log.op_id = self.operator_id
         log.save()
@@ -267,4 +280,21 @@ class ExportTask(TaskBase):
             
         dataset = dict(details=details)
         return dataset
+    
+    @classmethod    
+    def format_filename(cls):
+        return 'sy03_'+datetime.now().strftime('_%y%m%d_') + UplaodFileTask.FILE_SOURCE
+    
+    @classmethod
+    def format_filename_processed(cls, filename):
+        cls.deformat_filename(filename) 
+    
+    @classmethod    
+    def deformat_filename(cls, filename):
+        parts = filename.split('_')
+        if parts[-1] == UplaodFileTask.FILE_SOURCE:
+            return '_'.join(parts[0,-1])
+        else: 
+            return filename
+
         

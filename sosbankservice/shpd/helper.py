@@ -7,7 +7,7 @@ Created on Aug 14, 2012
 import setting
 import os, shutil
 from datetime import datetime
-
+    
 class SHPDDataFile(object):
     
     '报文编号'
@@ -50,7 +50,7 @@ class SHPDDataFile(object):
                 self._read_from_file()
                 
             else:
-                'send alerting email'
+                'send alerting email'  #TODO
             
         elif self.file_type == SHPDDataFile.TYPE_REPLY:
             
@@ -189,3 +189,4 @@ class SHPDDataFile(object):
             pass
         
         return True
+

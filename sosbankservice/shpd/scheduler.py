@@ -54,6 +54,7 @@ class Event(object):
             
 
 class CronTab(object):
+    
     def __init__(self, *events):
         self.events = events
 
