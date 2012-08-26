@@ -150,3 +150,11 @@ LOGGING = {
         },
     }
 }
+
+
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.126.com'
+EMAIL_PORT = 25
+EMAIL_HOST_USER = 'yanxs_hust@126.com'
+EMAIL_HOST_PASSWORD = 'ayan7758'
+

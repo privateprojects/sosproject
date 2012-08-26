@@ -6,8 +6,8 @@ Created on Aug 14, 2012
 import os
 
 USERNAME = 'yanxs_hust'
-PASS = 'ayan7084'
-pop3_server = ''
+PASS = '775800'
+pop3_server = 'pop3.163.com'
 working_dir = os.path.join(os.getcwdu(), 'data', 'workingfolder')
 achive_dir = os.path.join(os.getcwdu(), 'data', 'archive')
 

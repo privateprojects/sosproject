@@ -25,7 +25,7 @@ class TaskBase(object):
     
     @classmethod    
     def format_filename(cls, filename, idx=0):
-        return filename+datetime.now().strftime('_%y%m%H%M%S_') + '_'  + str(idx) + '_' + cls.FILE_SOURCE
+        return filename+datetime.now().strftime('_%y%m%d%H%M%S_') + '_'  + str(idx) + '_' + cls.FILE_SOURCE
     
     @classmethod
     def format_filename_processed(cls, filename):
@@ -244,10 +244,8 @@ class ExportTask(TaskBase):
         
         dataset = datafile.process()
         
-        'send email'
-        from django.core.mail import send_mail
-                
-        
+        self._send_email(decryptedFile)
+            
         'save log'    
         info_dict={} 
         info_dict.update(dataset.get('header')); 
@@ -261,6 +259,21 @@ class ExportTask(TaskBase):
         
         'archive file'
         datafile.archive()
+    
+    def _send_email(self, decryptedFile):
+        try:
+            'send email'
+            from django.core.mail import EmailMessage
+            
+            subject = 'SOS Service Update (' + datetime.now().strftime('_%y-%m-%d_') + ')'
+            body = 'Please see attached.'
+            to = ['yanxiaosong@gmail.com']
+            
+            message = EmailMessage(subject=subject, body=body, to=to)
+            message.attach_file(decryptedFile)
+            message.send()
+        except Exception, e:
+            print e
               
     def _get_data(self):
         
