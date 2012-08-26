@@ -16,7 +16,7 @@ class TaskBase(object):
     '''
     task base for importing and exporting data
     '''
-    def __class__(self):
+    def __call__(self):
         
         self.do()
         
@@ -43,7 +43,7 @@ class ImportTaskBase(TaskBase):
     
     def __init__(self):
         
-        TaskBase.__init__() 
+        TaskBase.__init__(self) 
     
     def save2db(self, details):
         
@@ -73,7 +73,7 @@ class EmailTask(ImportTaskBase):
     STATUS_DATA_LOADED = 2
     
     def __init__(self):
-        ImportTaskBase.__init__() 
+        ImportTaskBase.__init__(self) 
     
     def do(self):
         
@@ -193,7 +193,7 @@ class UplaodFileTask(ImportTaskBase):
     
     def __init__(self, uploadfilename, operator_id):
         
-        ImportTaskBase.__init__() 
+        ImportTaskBase.__init__(self) 
         self.uploadfilename = uploadfilename
         self.operator_id = operator_id
     
