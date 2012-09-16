@@ -82,7 +82,7 @@ class EmailTask(ImportTaskBase):
     
     def read_to_db(self, multiple_data):
         
-        for log, encryptedFile in multiple_data:
+        for email_digest, encryptedFile in multiple_data:
             
             'read data from file'
             decryptedFile = EmailTask.format_filename_processed(encryptedFile)
@@ -93,9 +93,8 @@ class EmailTask(ImportTaskBase):
             self.save2db(dataset.get('details'))
             
             'save log'
-            info_dict=json.loads(log.loginfo); 
-            info_dict.update(dataset.get('header')); info_dict.update(decryptedfile=decryptedFile)
-            log.info = json.dumps(info_dict)
+            info = json.dumps(dict(status=EmailTask.STATUS_DOWNLOADED, encryptedfile=encryptedFile, decryptedfile=decryptedFile, header=dataset.get('header')))
+            log = Log(identitiy=email_digest, type=Log.TYPE_CHOICES[1], info=info, status=0, op_id=0)
             log.status = EmailTask.STATUS_DATA_LOADED
             log.save()
             
@@ -150,12 +149,14 @@ class EmailTask(ImportTaskBase):
                     fp.write(part.get_payload(decode=1))
                     fp.close()
                     
-                    'add log'
-                    info = json.dumps(dict(status=EmailTask.STATUS_DOWNLOADED, encryptedfile=filename))
-                    log = Log(identitiy=email_digest, type=Log.TYPE_CHOICES[1], info=info, status=0, op_id=0)
-                    log.save(); ret_item.append(log)
-                    
+                    # 'add log'
+                    # info = json.dumps(dict(status=EmailTask.STATUS_DOWNLOADED, encryptedfile=filename))
+                    # log = Log(identitiy=email_digest, type=Log.TYPE_CHOICES[1], info=info, status=0, op_id=0)
+                    # ret_item.append(log)
+                    #log.save();
+                    ret_item.append(email_digest)
                     ret_item.append(filename)
+                    
                     ret.append(ret_item)
                     
                 file_idx += 1

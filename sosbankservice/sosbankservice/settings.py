@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Django settings for sosbankservice project.
 from shpd import config
 
@@ -190,5 +189,3 @@ EMAIL_HOST = 'smtp.126.com'
 EMAIL_PORT = 25
 EMAIL_HOST_USER = 'yanxs_hust@126.com'
 EMAIL_HOST_PASSWORD = 'ayan7758'
-
->>>>>>> 7ead93129603843df95154b418fc0c00979c634b

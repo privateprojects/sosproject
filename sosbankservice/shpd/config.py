@@ -5,6 +5,7 @@ Created on Aug 14, 2012
 '''
 import os
 
+
 USERNAME = 'yanxs_hust'
 PASS = 'ayan7084'
 POP3_SERVER = ''
@@ -16,7 +17,7 @@ TEMPLATES_DIR = os.path.join(SHPD_DIR, '../templates')
 
 
 DECRYPT_KEY = '999999'
-ENCRYPT_KEY = '123456'
+ENCRYPT_KEY = '999999'
 ENCRYPT_CMD_PATH = '"' + os.path.join(os.getcwd(), 'tools', 'my_des.exe') + '"'
 
 DB_SCHEMA = "sosbankservice"

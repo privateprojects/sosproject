@@ -5,15 +5,18 @@ from django.db import models
 
 class Customer(models.Model):
     
-    # 姓名|客户号|分行名称|卡号|充值点数|手机号
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=120)
-    customer_no = models.CharField(max_length=60)
-    branch_name = models.CharField(max_length=120)
-    card_no = models.CharField(max_length=100)
-    mobile = models.CharField(max_length=20)
-    service_count = models.IntegerField() 
+    name = models.CharField(max_length=120)  # 姓名
+    customer_no = models.CharField(max_length=60)  #客户号
+    branch_name = models.CharField(max_length=120)  #分行名称
+    card_no = models.CharField(max_length=100) #卡号
+    service_expire = models.IntegerField()    #充值点数/服务期限
+    mobile = models.CharField(max_length=20)  #手机号
+    identifier = models.CharField(max_length=12)   # 客户ID后6位
+     
+    service_count = models.IntegerField()   # 服务次数
     comments=models.TextField()
+    
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
 
